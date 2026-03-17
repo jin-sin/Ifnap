@@ -1,6 +1,6 @@
 # ifnap
 
-If my baby has nap
+If your baby is sleeping for driving
 
 ## Getting Started
 
