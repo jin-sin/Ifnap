@@ -14,15 +14,18 @@ class CourseListScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('추천 코스'),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: mockCourses.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final course = mockCourses[index];
-          return _CourseCard(course: course);
-        },
+      body: const Center(
+        child: Text('코스가 없습니다.'),
       ),
+      // ListView.separated(
+      //   padding: const EdgeInsets.all(20),
+      //   itemCount: mockCourses.length,
+      //   separatorBuilder: (_, __) => const SizedBox(height: 16),
+      //   itemBuilder: (context, index) {
+      //     final course = mockCourses[index];
+      //     return _CourseCard(course: course);
+      //   },
+      // ),
     );
   }
 }

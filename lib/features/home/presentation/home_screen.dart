@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/search_condition.dart';
 import '../../course_list/presentation/course_list_screen.dart';
+import '../../place_list/presentation/place_list_screen.dart';
 import '../../map/presentation/widget/ifnap_map_view.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -42,8 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const CourseListScreen(),
-        settings: RouteSettings(arguments: condition),
+        builder: (_) => PlaceListScreen(condition: condition),
       ),
     );
   }

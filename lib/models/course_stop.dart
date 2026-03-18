@@ -6,10 +6,12 @@ class CourseStop {
     required this.arrivalLabel,
     required this.departureLabel,
     required this.driveMinutesFromPrev,
+    required this.stayMinutes,
   });
 
   final Place place;
   final String arrivalLabel;
   final String departureLabel;
   final int driveMinutesFromPrev;
+  final int stayMinutes;
 }
