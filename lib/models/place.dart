@@ -12,6 +12,7 @@ class Place {
     required this.babyChair,
     required this.parkingEase,
     required this.ageFitLabel,
+    this.facilities = const [],
   });
 
   final String id;
@@ -27,4 +28,5 @@ class Place {
   final bool babyChair;
   final String parkingEase;
   final String ageFitLabel;
+  final List<String> facilities;
 }

@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 
+import '../../../mock/mock_place_candidates.dart';
 import '../../../models/place_candidate.dart';
 import '../../../models/search_condition.dart';
-import '../../../mock/mock_place_candidates.dart';
 
-class PlaceListScreen extends StatelessWidget {
+const Color _kBlue = Color(0xFF2563EB);
+
+const Map<String, IconData> _facilityIcons = {
+  '수유실': Icons.child_care,
+  '유모차 대여': Icons.accessible_forward,
+  '유모차 접근 쉬움': Icons.accessible_forward,
+  '유모차 접근 가능': Icons.accessible_forward,
+  '엘리베이터': Icons.elevator,
+  '기저귀 교환대': Icons.baby_changing_station,
+  '무료 주차': Icons.local_parking,
+  '놀이방': Icons.toys,
+  '식당가': Icons.restaurant,
+};
+
+const _kCategories = ['박물관', '아쿠아리움', '키즈카페', '공원', '문화예술'];
+
+class PlaceListScreen extends StatefulWidget {
   const PlaceListScreen({
     super.key,
     required this.condition,
@@ -13,203 +29,524 @@ class PlaceListScreen extends StatelessWidget {
   final SearchCondition condition;
 
   @override
-  Widget build(BuildContext context) {
-    final candidates = mockPlaceCandidates
-        .where((item) => item.driveMinutes <= condition.driveMinutes)
+  State<PlaceListScreen> createState() => _PlaceListScreenState();
+}
+
+class _PlaceListScreenState extends State<PlaceListScreen> {
+  String _sort = '가까운 순';
+  String? _categoryFilter;
+
+  static const _sortOptions = ['가까운 순', '빠른 순', '먼 순'];
+
+  List<PlaceCandidate> get _filtered {
+    var list = mockPlaceCandidates
+        .where((c) => c.driveMinutes <= widget.condition.driveMinutes)
         .toList();
 
+    if (_categoryFilter != null) {
+      list = list.where((c) => c.place.category == _categoryFilter).toList();
+    }
+
+    list.sort((a, b) {
+      switch (_sort) {
+        case '빠른 순':
+          return a.driveMinutes.compareTo(b.driveMinutes);
+        case '먼 순':
+          return b.distanceKm.compareTo(a.distanceKm);
+        default:
+          return a.distanceKm.compareTo(b.distanceKm);
+      }
+    });
+
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final candidates = _filtered;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text('갈 수 있는 장소'),
-      ),
-      body: candidates.isEmpty
-          ? const _EmptyState()
-          : ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: candidates.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final candidate = candidates[index];
-          return _PlaceCandidateCard(candidate: candidate);
-        },
-      ),
-    );
-  }
-}
-
-class _PlaceCandidateCard extends StatelessWidget {
-  const _PlaceCandidateCard({
-    required this.candidate,
-  });
-
-  final PlaceCandidate candidate;
-
-  @override
-  Widget build(BuildContext context) {
-    final place = candidate.place;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${place.name} 선택 → 다음에 코스 리스트 화면으로 연결'),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x11000000),
-              blurRadius: 20,
-              offset: Offset(0, 8),
-            ),
-          ],
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              place.name,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '${place.region} · ${place.address}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.black54,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _MetaColumn(
-                    label: '운전 시간',
-                    value: '${candidate.driveMinutes}분',
-                  ),
-                ),
-                Expanded(
-                  child: _MetaColumn(
-                    label: '거리',
-                    value: '${candidate.distanceKm.toStringAsFixed(1)}km',
-                  ),
-                ),
-                Expanded(
-                  child: _MetaColumn(
-                    label: '체류 추천',
-                    value: '${place.recommendedStayMinutes}분',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _InfoChip(label: place.ageFitLabel),
-                _InfoChip(label: '유모차 ${_strollerLabel(place.strollerAccess)}'),
-                _InfoChip(label: '주차 ${_parkingLabel(place.parkingEase)}'),
-                if (place.babyChair) const _InfoChip(label: '아기의자 있음'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _strollerLabel(String value) {
-    switch (value) {
-      case 'easy':
-        return '편함';
-      case 'medium':
-        return '보통';
-      case 'hard':
-        return '어려움';
-      default:
-        return value;
-    }
-  }
-
-  String _parkingLabel(String value) {
-    switch (value) {
-      case 'easy':
-        return '편함';
-      case 'medium':
-        return '보통';
-      case 'hard':
-        return '불편';
-      default:
-        return value;
-    }
-  }
-}
-
-class _MetaColumn extends StatelessWidget {
-  const _MetaColumn({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: Colors.black54,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        title: const Text(
+          '목적지 후보',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
         ),
-      ],
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.black87),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _FilterBar(
+            sort: _sort,
+            sortOptions: _sortOptions,
+            categoryFilter: _categoryFilter,
+            onSortChanged: (v) => setState(() => _sort = v),
+            onCategoryChanged: (v) => setState(
+              () => _categoryFilter = _categoryFilter == v ? null : v,
+            ),
+          ),
+          Expanded(
+            child: candidates.isEmpty
+                ? const _EmptyState()
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    itemCount: candidates.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, i) =>
+                        _PlaceCard(candidate: candidates[i]),
+                  ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: const _BottomNav(),
     );
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({
-    required this.label,
+// ──────────────────────────────────────────
+// Filter bar
+// ──────────────────────────────────────────
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
+    required this.sort,
+    required this.sortOptions,
+    required this.categoryFilter,
+    required this.onSortChanged,
+    required this.onCategoryChanged,
   });
 
-  final String label;
+  final String sort;
+  final List<String> sortOptions;
+  final String? categoryFilter;
+  final ValueChanged<String> onSortChanged;
+  final ValueChanged<String> onCategoryChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F2FA),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          fontWeight: FontWeight.w600,
+      color: Colors.white,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            _SortChip(
+              label: '정렬: $sort',
+              options: sortOptions,
+              onSelected: onSortChanged,
+            ),
+            const SizedBox(width: 8),
+            ..._kCategories.map(
+              (cat) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _CategoryChip(
+                  label: cat,
+                  selected: categoryFilter == cat,
+                  onTap: () => onCategoryChanged(cat),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+
+class _SortChip extends StatelessWidget {
+  const _SortChip({
+    required this.label,
+    required this.options,
+    required this.onSelected,
+  });
+
+  final String label;
+  final List<String> options;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final result = await showModalBottomSheet<String>(
+          context: context,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (_) => _SortSheet(options: options),
+        );
+        if (result != null) onSelected(result);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: _kBlue,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              color: Colors.white,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SortSheet extends StatelessWidget {
+  const _SortSheet({required this.options});
+
+  final List<String> options;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...options.map(
+            (o) => ListTile(
+              title: Text(o),
+              onTap: () => Navigator.pop(context, o),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? _kBlue : Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected ? _kBlue : const Color(0xFFD0D0D0),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.black87,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down,
+              color: selected ? Colors.white : Colors.black54,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────
+// Place card
+// ──────────────────────────────────────────
+
+class _PlaceCard extends StatefulWidget {
+  const _PlaceCard({required this.candidate});
+
+  final PlaceCandidate candidate;
+
+  @override
+  State<_PlaceCard> createState() => _PlaceCardState();
+}
+
+class _PlaceCardState extends State<_PlaceCard> {
+  bool _liked = false;
+
+  static const Map<String, Color> _categoryColors = {
+    '박물관': Color(0xFFE8EAF6),
+    '아쿠아리움': Color(0xFFE3F2FD),
+    '키즈카페': Color(0xFFFFF3E0),
+    '공원': Color(0xFFE8F5E9),
+    '문화예술': Color(0xFFFCE4EC),
+  };
+
+  static const Map<String, IconData> _categoryIcons = {
+    '박물관': Icons.account_balance,
+    '아쿠아리움': Icons.water,
+    '키즈카페': Icons.child_friendly,
+    '공원': Icons.park,
+    '문화예술': Icons.palette,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final place = widget.candidate.place;
+    final driveMin = widget.candidate.driveMinutes;
+    final bgColor =
+        _categoryColors[place.category] ?? const Color(0xFFEEEEEE);
+    final catIcon =
+        _categoryIcons[place.category] ?? Icons.place;
+
+    return GestureDetector(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${place.name} 선택 → 코스 리스트 화면으로 연결'),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image placeholder
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(catIcon, color: Colors.black38, size: 32),
+                ),
+                const SizedBox(width: 12),
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              place.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                height: 1.4,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _liked = !_liked),
+                            child: Icon(
+                              _liked
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: _liked
+                                  ? _kBlue
+                                  : const Color(0xFFBDBDBD),
+                              size: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${place.category} • $driveMin분 거리',
+                        style: const TextStyle(
+                          color: _kBlue,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        place.region,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (place.facilities.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: place.facilities
+                    .map((f) => _FacilityChip(label: f))
+                    .toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FacilityChip extends StatelessWidget {
+  const _FacilityChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = _facilityIcons[label] ?? Icons.check_circle_outline;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.black54),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────
+// Bottom navigation
+// ──────────────────────────────────────────
+
+class _BottomNav extends StatelessWidget {
+  const _BottomNav();
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      currentIndex: 1,
+      selectedItemColor: _kBlue,
+      unselectedItemColor: const Color(0xFF9E9E9E),
+      backgroundColor: Colors.white,
+      type: BottomNavigationBarType.fixed,
+      selectedLabelStyle: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelStyle: const TextStyle(fontSize: 11),
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home),
+          label: '홈',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.location_on),
+          activeIcon: Icon(Icons.location_on),
+          label: '장소',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite_border),
+          activeIcon: Icon(Icons.favorite),
+          label: '즐겨찾기',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          activeIcon: Icon(Icons.person),
+          label: '마이',
+        ),
+      ],
+      onTap: (_) {},
+    );
+  }
+}
+
+// ──────────────────────────────────────────
+// Empty state
+// ──────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
