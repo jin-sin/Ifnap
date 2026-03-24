@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import 'features/home/presentation/home_screen.dart';
@@ -8,7 +9,7 @@ const _mapboxToken = String.fromEnvironment('MAPBOX_TOKEN');
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   MapboxOptions.setAccessToken(_mapboxToken);
-  runApp(const IfnapApp());
+  runApp(const ProviderScope(child: IfnapApp()));
 }
 
 class IfnapApp extends StatelessWidget {

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../mock/mock_place_candidates.dart';
 import '../../../models/place_candidate.dart';
 import '../../../models/search_condition.dart';
+import '../../../providers/planning_session_provider.dart';
+import '../../course_list/presentation/course_list_screen.dart';
 
 const Color _kBlue = Color(0xFF2563EB);
 
@@ -20,27 +23,22 @@ const Map<String, IconData> _facilityIcons = {
 
 const _kCategories = ['박물관', '아쿠아리움', '키즈카페', '공원', '문화예술'];
 
-class PlaceListScreen extends StatefulWidget {
-  const PlaceListScreen({
-    super.key,
-    required this.condition,
-  });
-
-  final SearchCondition condition;
+class PlaceListScreen extends ConsumerStatefulWidget {
+  const PlaceListScreen({super.key});
 
   @override
-  State<PlaceListScreen> createState() => _PlaceListScreenState();
+  ConsumerState<PlaceListScreen> createState() => _PlaceListScreenState();
 }
 
-class _PlaceListScreenState extends State<PlaceListScreen> {
+class _PlaceListScreenState extends ConsumerState<PlaceListScreen> {
   String _sort = '가까운 순';
   String? _categoryFilter;
 
   static const _sortOptions = ['가까운 순', '빠른 순', '먼 순'];
 
-  List<PlaceCandidate> get _filtered {
+  List<PlaceCandidate> _filtered(SearchCondition condition) {
     var list = mockPlaceCandidates
-        .where((c) => c.driveMinutes <= widget.condition.driveMinutes)
+        .where((c) => c.driveMinutes <= condition.driveMinutes)
         .toList();
 
     if (_categoryFilter != null) {
@@ -63,7 +61,16 @@ class _PlaceListScreenState extends State<PlaceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final candidates = _filtered;
+    final session = ref.watch(planningSessionProvider);
+    final condition = session.condition;
+
+    if (condition == null) {
+      return const Scaffold(
+        body: Center(child: Text('검색 조건이 없어요.')),
+      );
+    }
+
+    final candidates = _filtered(condition);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
@@ -353,9 +360,9 @@ class _PlaceCardState extends State<_PlaceCard> {
 
     return GestureDetector(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${place.name} 선택 → 코스 리스트 화면으로 연결'),
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CourseListScreen(),
           ),
         );
       },

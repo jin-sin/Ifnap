@@ -3,7 +3,8 @@
     "allow": [
       "mcp__figma-desktop__get_design_context",
       "mcp__figma-desktop__get_screenshot",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

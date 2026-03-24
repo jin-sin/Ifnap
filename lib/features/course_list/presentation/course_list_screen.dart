@@ -1,31 +1,33 @@
-
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ifnap/mock/mock_courses.dart';
-import 'package:ifnap/models/course.dart';
+import '../../../models/course.dart';
+import '../../../providers/planning_session_provider.dart';
 
-class CourseListScreen extends StatelessWidget {
+class CourseListScreen extends ConsumerWidget {
   const CourseListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(planningSessionProvider);
+    final courses = session.generatedCourses;
+    final destination = session.selectedDestination;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('추천 코스'),
+        title: Text(destination != null ? '${destination.name} 코스' : '코스 목록'),
       ),
-      body: const Center(
-        child: Text('코스가 없습니다.'),
+      body: courses.isEmpty
+          ? const _EmptyState()
+          : ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemCount: courses.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          final course = courses[index];
+          return _CourseCard(course: course);
+        },
       ),
-      // ListView.separated(
-      //   padding: const EdgeInsets.all(20),
-      //   itemCount: mockCourses.length,
-      //   separatorBuilder: (_, __) => const SizedBox(height: 16),
-      //   itemBuilder: (context, index) {
-      //     final course = mockCourses[index];
-      //     return _CourseCard(course: course);
-      //   },
-      // ),
     );
   }
 }
@@ -212,6 +214,17 @@ class _InfoChip extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
       ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('코스가 없어요.'),
     );
   }
 }

@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../providers/planning_session_provider.dart';
 import '../../../models/search_condition.dart';
-import '../../course_list/presentation/course_list_screen.dart';
 import '../../place_list/presentation/place_list_screen.dart';
 import '../../map/presentation/widget/ifnap_map_view.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   TimeOfDay _departureTime = const TimeOfDay(hour: 10, minute: 0);
   TimeOfDay _returnTime = const TimeOfDay(hour: 17, minute: 0);
   int _childAgeMonths = 18;
@@ -41,9 +42,12 @@ class _HomeScreenState extends State<HomeScreen> {
       childAgeMonths: _childAgeMonths,
       driveMinutes: _driveMinutes,
     );
+
+    ref.read(planningSessionProvider.notifier).setCondition(condition);
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PlaceListScreen(condition: condition),
+        builder: (_) => const PlaceListScreen(),
       ),
     );
   }

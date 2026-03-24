@@ -64,6 +64,66 @@ final dumulmeori = Place(
   facilities: ['유모차 접근 쉬움', '무료 주차'],
 );
 
+final yangpyeongBrunch = Place(
+  id: 'yp_brunch',
+  name: '양평 브런치 카페',
+  region: '양평',
+  category: 'brunch',
+  address: '경기도 양평군 서종면',
+  lat: 37.600,
+  lng: 127.350,
+  recommendedStayMinutes: 70,
+  strollerAccess: 'easy',
+  babyChair: true,
+  parkingEase: 'easy',
+  ageFitLabel: '아이 동반 가능',
+);
+
+final yangpyeongRestaurant = Place(
+  id: 'yp_restaurant',
+  name: '양평 가족 식당',
+  region: '양평',
+  category: 'restaurant',
+  address: '경기도 양평군 양평읍',
+  lat: 37.490,
+  lng: 127.490,
+  recommendedStayMinutes: 60,
+  strollerAccess: 'easy',
+  babyChair: true,
+  parkingEase: 'easy',
+  ageFitLabel: '18개월 이상 무난',
+);
+
+final yangpyeongCafe = Place(
+  id: 'yp_cafe',
+  name: '리버뷰 디저트 카페',
+  region: '양평',
+  category: 'cafe',
+  address: '경기도 양평군 강상면',
+  lat: 37.470,
+  lng: 127.510,
+  recommendedStayMinutes: 45,
+  strollerAccess: 'medium',
+  babyChair: true,
+  parkingEase: 'medium',
+  ageFitLabel: '아이 동반 가능',
+);
+
+final yangpyeongViewPoint = Place(
+  id: 'yp_view',
+  name: '북한강 뷰 포인트',
+  region: '양평',
+  category: 'view_point',
+  address: '경기도 양평군 양서면',
+  lat: 37.560,
+  lng: 127.330,
+  recommendedStayMinutes: 30,
+  strollerAccess: 'easy',
+  babyChair: false,
+  parkingEase: 'easy',
+  ageFitLabel: '차 안 대기 적합',
+);
+
 final heyri = Place(
   id: 'dest_paju',
   name: '헤이리 예술마을',
