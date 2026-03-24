@@ -321,16 +321,16 @@ class _CategoryChip extends StatelessWidget {
 // Place card
 // ──────────────────────────────────────────
 
-class _PlaceCard extends StatefulWidget {
+class _PlaceCard extends ConsumerStatefulWidget {
   const _PlaceCard({required this.candidate});
 
   final PlaceCandidate candidate;
 
   @override
-  State<_PlaceCard> createState() => _PlaceCardState();
+  ConsumerState<_PlaceCard> createState() => _PlaceCardState();
 }
 
-class _PlaceCardState extends State<_PlaceCard> {
+class _PlaceCardState extends ConsumerState<_PlaceCard> {
   bool _liked = false;
 
   static const Map<String, Color> _categoryColors = {
@@ -360,6 +360,9 @@ class _PlaceCardState extends State<_PlaceCard> {
 
     return GestureDetector(
       onTap: () {
+        ref
+            .read(planningSessionProvider.notifier)
+            .selectDestination(place);
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => CourseListScreen(),
