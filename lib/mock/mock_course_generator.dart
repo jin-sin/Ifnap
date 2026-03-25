@@ -124,6 +124,7 @@ List<Course> _generateYangpyeongCourses(
       expectedReturnTime: '14:40',
       stops: courseAStops,
       sleepAlternatives: sleepAlternatives,
+      tags: ['낮잠 전환 가능', '부모 휴식 포함'],
     ),
     Course(
       id: 'course_y_2',
@@ -135,6 +136,7 @@ List<Course> _generateYangpyeongCourses(
       expectedReturnTime: '14:45',
       stops: courseBStops,
       sleepAlternatives: sleepAlternatives,
+      tags: ['유모차 이용 편함', '아이 동반 OK'],
     ),
     Course(
       id: 'course_y_3',
@@ -146,6 +148,7 @@ List<Course> _generateYangpyeongCourses(
       expectedReturnTime: '13:55',
       stops: courseCStops,
       sleepAlternatives: sleepAlternatives,
+      tags: ['낮잠 대응형', '부모 휴식 포함'],
     ),
   ];
 

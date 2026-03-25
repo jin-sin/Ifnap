@@ -13,6 +13,7 @@ class Course {
     required this.expectedReturnTime,
     required this.stops,
     required this.sleepAlternatives,
+    this.tags = const [],
   });
 
   final String id;
@@ -26,4 +27,5 @@ class Course {
 
   final List<CourseStop> stops;
   final List<SleepAlternative> sleepAlternatives;
+  final List<String> tags;
 }
