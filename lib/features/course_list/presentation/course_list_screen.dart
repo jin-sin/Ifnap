@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/course.dart';
 import '../../../providers/planning_session_provider.dart';
+import '../../course_detail/presentation/course_detail_screen.dart';
 
 const Color _kBlue = Color(0xFF0050D4);
 const Color _kPurple = Color(0xFF8E3A8A);
@@ -286,16 +287,16 @@ class _Chip extends StatelessWidget {
 // Course card
 // ──────────────────────────────────────────
 
-class _CourseCard extends StatefulWidget {
+class _CourseCard extends ConsumerStatefulWidget {
   const _CourseCard({required this.course});
 
   final Course course;
 
   @override
-  State<_CourseCard> createState() => _CourseCardState();
+  ConsumerState<_CourseCard> createState() => _CourseCardState();
 }
 
-class _CourseCardState extends State<_CourseCard> {
+class _CourseCardState extends ConsumerState<_CourseCard> {
   bool _saved = false;
 
   @override
@@ -394,9 +395,10 @@ class _CourseCardState extends State<_CourseCard> {
                   width: double.infinity,
                   child: GestureDetector(
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${course.title} 상세 화면은 다음 단계에서 연결됩니다.'),
+                      ref.read(planningSessionProvider.notifier).selectCourse(course);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const CourseDetailScreen(),
                         ),
                       );
                     },
