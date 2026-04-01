@@ -25,11 +25,25 @@ const List<Color> _stopColors = [
 // Screen
 // ──────────────────────────────────────────
 
-class CourseDetailScreen extends ConsumerWidget {
+class CourseDetailScreen extends ConsumerStatefulWidget {
   const CourseDetailScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CourseDetailScreen> createState() => _CourseDetailScreenState();
+}
+
+class _CourseDetailScreenState extends ConsumerState<CourseDetailScreen> {
+  final _scrollController = ScrollController();
+  bool _mapInteracting = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final course = ref.watch(
       planningSessionProvider.select((s) => s.selectedCourse),
     );
@@ -54,16 +68,21 @@ class CourseDetailScreen extends ConsumerWidget {
       body: Stack(
         children: [
           ListView(
+            controller: _scrollController,
+            physics: _mapInteracting
+                ? const NeverScrollableScrollPhysics()
+                : const ClampingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(24, 88, 24, 160),
             children: [
               _HeroSection(title: course.title, tags: course.tags),
               const SizedBox(height: 16),
               _MapCard(
-            stops: course.stops,
-            markers: course.stops
-                .map((s) => Position(s.place.lng, s.place.lat))
-                .toList(),
-          ),
+                stops: course.stops,
+                markers: course.stops
+                    .map((s) => Position(s.place.lng, s.place.lat))
+                    .toList(),
+                onInteractionChanged: (v) => setState(() => _mapInteracting = v),
+              ),
               const SizedBox(height: 16),
               _SummaryCard(
                 totalMinutes: course.totalMinutes,
@@ -303,10 +322,15 @@ class _HeroSection extends StatelessWidget {
 // ──────────────────────────────────────────
 
 class _MapCard extends StatefulWidget {
-  const _MapCard({required this.stops, required this.markers});
+  const _MapCard({
+    required this.stops,
+    required this.markers,
+    required this.onInteractionChanged,
+  });
 
   final List<CourseStop> stops;
   final List<Position> markers;
+  final ValueChanged<bool> onInteractionChanged;
 
   @override
   State<_MapCard> createState() => _MapCardState();
@@ -342,10 +366,15 @@ class _MapCardState extends State<_MapCard> {
       child: Stack(
         children: [
           Positioned.fill(
-            child: IfnapMapView(
-              key: _mapKey,
-              initialZoom: 10,
-              markers: widget.markers,
+            child: Listener(
+              onPointerDown: (_) => widget.onInteractionChanged(true),
+              onPointerUp: (_) => widget.onInteractionChanged(false),
+              onPointerCancel: (_) => widget.onInteractionChanged(false),
+              child: IfnapMapView(
+                key: _mapKey,
+                initialZoom: 10,
+                markers: widget.markers,
+              ),
             ),
           ),
           // Zoom + locate buttons (right side)
