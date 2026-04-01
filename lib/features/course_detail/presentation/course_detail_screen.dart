@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' show Position;
+
 import '../../../models/course_stop.dart';
 import '../../../providers/planning_session_provider.dart';
 import '../../map/presentation/widget/ifnap_map_view.dart';
@@ -56,7 +58,12 @@ class CourseDetailScreen extends ConsumerWidget {
             children: [
               _HeroSection(title: course.title, tags: course.tags),
               const SizedBox(height: 16),
-              _MapCard(stops: course.stops),
+              _MapCard(
+            stops: course.stops,
+            markers: course.stops
+                .map((s) => Position(s.place.lng, s.place.lat))
+                .toList(),
+          ),
               const SizedBox(height: 16),
               _SummaryCard(
                 totalMinutes: course.totalMinutes,
@@ -142,6 +149,46 @@ class CourseDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────
+// Map overlay button (zoom / locate)
+// ──────────────────────────────────────────
+
+class _MapOverlayButton extends StatelessWidget {
+  const _MapOverlayButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(40),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(40),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 18, color: const Color(0xFF2C2F31)),
           ),
         ),
       ),
@@ -255,10 +302,18 @@ class _HeroSection extends StatelessWidget {
 // Map card with route stop indicators
 // ──────────────────────────────────────────
 
-class _MapCard extends StatelessWidget {
-  const _MapCard({required this.stops});
+class _MapCard extends StatefulWidget {
+  const _MapCard({required this.stops, required this.markers});
 
   final List<CourseStop> stops;
+  final List<Position> markers;
+
+  @override
+  State<_MapCard> createState() => _MapCardState();
+}
+
+class _MapCardState extends State<_MapCard> {
+  final _mapKey = GlobalKey<IfnapMapViewState>();
 
   @override
   Widget build(BuildContext context) {
@@ -286,35 +341,39 @@ class _MapCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          const Positioned.fill(child: IfnapMapView(initialZoom: 10)),
-          // Expand / locate button
+          Positioned.fill(
+            child: IfnapMapView(
+              key: _mapKey,
+              initialZoom: 10,
+              markers: widget.markers,
+            ),
+          ),
+          // Zoom + locate buttons (right side)
           Positioned(
             top: 12,
             right: 12,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(40),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(40),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 15,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.my_location_rounded,
-                    size: 20,
-                    color: Color(0xFF2C2F31),
+            child: Column(
+              children: [
+                _MapOverlayButton(
+                  icon: Icons.my_location_rounded,
+                  onTap: () => _mapKey.currentState?.flyTo(
+                    widget.markers.isNotEmpty
+                        ? widget.markers.first
+                        : Position(126.9780, 37.5665),
+                    zoom: 10,
                   ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                _MapOverlayButton(
+                  icon: Icons.add_rounded,
+                  onTap: () => _mapKey.currentState?.zoomIn(),
+                ),
+                const SizedBox(height: 4),
+                _MapOverlayButton(
+                  icon: Icons.remove_rounded,
+                  onTap: () => _mapKey.currentState?.zoomOut(),
+                ),
+              ],
             ),
           ),
           // Route stop indicator pills
@@ -326,7 +385,7 @@ class _MapCard extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
               child: Row(
-                children: stops.asMap().entries.map((e) {
+                children: widget.stops.asMap().entries.map((e) {
                   final dotColor = _stopColors[e.key % _stopColors.length];
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
